@@ -1,0 +1,48 @@
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - ACME_EMAIL=${ACME_EMAIL}
+      - REGRU_USERNAME=${REGRU_USERNAME}
+      - REGRU_PASSWORD=${REGRU_PASSWORD}
+      - REGRU_PROPAGATION_TIMEOUT=${REGRU_PROPAGATION_TIMEOUT:-300}
+      - REGRU_POLLING_INTERVAL=${REGRU_POLLING_INTERVAL:-5}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+    command: ["--configFile=/etc/traefik/traefik.yml"]
+    networks:
+      - tunnel
+
+  frps:
+    image: fatedier/frps:v0.61.1
+    container_name: frps
+    restart: unless-stopped
+    ports:
+      - "7000:7000/tcp"
+    volumes:
+      - ./frps.toml:/etc/frp/frps.toml:ro
+    command: ["-c", "/etc/frp/frps.toml"]
+    networks:
+      - tunnel
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=tunnel_net"
+      - "traefik.http.routers.frp.rule=HostRegexp(`[a-z0-9-]+\\.limpopo113\\.ru`)"
+      - "traefik.http.routers.frp.entrypoints=websecure"
+      - "traefik.http.routers.frp.tls=true"
+      - "traefik.http.routers.frp.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frp.tls.domains[0].main=limpopo113.ru"
+      - "traefik.http.routers.frp.tls.domains[0].sans=*.limpopo113.ru"
+      - "traefik.http.services.frp.loadbalancer.server.port=8080"
+      - "traefik.http.services.frp.loadbalancer.server.scheme=http"
+
+networks:
+  tunnel:
+    name: tunnel_net

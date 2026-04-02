@@ -1,0 +1,13 @@
+# Скопируйте в frps.toml и задайте auth.token (или сгенерируйте через deploy-скрипт).
+
+bindAddr = "0.0.0.0"
+bindPort = 7000
+
+# HTTP для виртуальных хостов — внутри сети Docker; снаружи TLS делает Traefik
+vhostHTTPPort = 8080
+
+# Можно использовать subdomain = "myapp" во frpc → myapp.limpopo113.ru
+subDomainHost = "limpopo113.ru"
+
+auth.method = "token"
+auth.token = "CHANGE_ME_USE_FRP_TOKEN_FROM_ENV"

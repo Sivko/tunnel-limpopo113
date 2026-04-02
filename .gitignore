@@ -1,0 +1,4 @@
+.env
+frps.toml
+letsencrypt/acme.json
+*.log

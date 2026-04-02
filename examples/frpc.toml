@@ -1,0 +1,20 @@
+# Пример клиента frp: проброс локального HTTP на https://<имя>.limpopo113.ru
+# Скачайте frpc: https://github.com/fatedier/frp/releases
+# Запуск: frpc -c frpc.toml
+
+serverAddr = "limpopo113.ru"
+serverPort = 7000
+auth.method = "token"
+auth.token = "ТОТ_ЖЕ_СЕКРЕТ_ЧТО_В_frps.toml"
+
+[[proxies]]
+name = "my-site"
+type = "http"
+localIP = "127.0.0.1"
+localPort = 3000
+
+# Вариант A: только поддомен (нужен subDomainHost на сервере)
+subdomain = "demo"
+
+# Вариант B: полное имя (раскомментируйте и уберите subdomain)
+# customDomains = ["demo.limpopo113.ru"]
