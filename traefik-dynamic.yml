@@ -1,0 +1,6 @@
+http:
+  middlewares:
+    subdomains-ip-whitelist:
+      forwardAuth:
+        address: "http://whitelist-guard:8080/verify"
+        trustForwardHeader: true

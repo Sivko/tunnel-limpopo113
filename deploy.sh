@@ -24,12 +24,14 @@ python3 "$ROOT/scripts/generate_frps_toml.py"
 
 ssh "$SERVER" "mkdir -p '$REMOTE_PATH/letsencrypt' && (test -f '$REMOTE_PATH/letsencrypt/acme.json' || echo '{}' > '$REMOTE_PATH/letsencrypt/acme.json') && chmod 600 '$REMOTE_PATH/letsencrypt/acme.json'"
 
-scp docker-compose.yml .env frps.toml "$SERVER:$REMOTE_PATH/"
+scp docker-compose.yml .env frps.toml traefik.yml traefik-dynamic.yml "$SERVER:$REMOTE_PATH/"
+scp -r "$ROOT/whitelist-guard" "$SERVER:$REMOTE_PATH/"
 
 if [[ "$PULL_IMAGES" == "1" ]]; then
-  ssh "$SERVER" "cd '$REMOTE_PATH' && docker compose pull && docker compose up -d --remove-orphans"
+  # tunnel-whitelist-guard:local собирается на сервере; pull только у образов из registry.
+  ssh "$SERVER" "cd '$REMOTE_PATH' && docker compose pull traefik frps && docker compose up -d --build --remove-orphans"
 else
-  ssh "$SERVER" "cd '$REMOTE_PATH' && docker compose up -d --remove-orphans"
+  ssh "$SERVER" "cd '$REMOTE_PATH' && docker compose up -d --build --remove-orphans"
 fi
 
 echo "Готово: $SERVER:$REMOTE_PATH"

@@ -3,6 +3,8 @@ services:
     image: traefik:v3.6
     container_name: traefik
     restart: unless-stopped
+    depends_on:
+      - whitelist-guard
     ports:
       - "80:80"
       - "443:443"
@@ -16,9 +18,37 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./letsencrypt:/letsencrypt
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik-dynamic.yml:/etc/traefik/traefik-dynamic.yml:ro
     command: ["--configFile=/etc/traefik/traefik.yml"]
     networks:
       - tunnel
+
+  whitelist-guard:
+    build: ./whitelist-guard
+    image: tunnel-whitelist-guard:local
+    container_name: whitelist-guard
+    restart: unless-stopped
+    environment:
+      WHITELIST_ADMIN_TOKEN: ${WHITELIST_ADMIN_TOKEN}
+      WHITELIST_FILE: /data/whitelist.json
+    volumes:
+      - whitelist-data:/data
+    ports:
+      - "127.0.0.1:9180:8080"
+    networks:
+      - tunnel
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=tunnel_net"
+      - "traefik.http.services.whitelist-api.loadbalancer.server.port=8080"
+      - 'traefik.http.routers.whitelist-admin.rule=Host(`whitelist.limpopo113.ru`) && Path(`/white-list`) && (Method(`GET`) || Method(`POST`))'
+      - "traefik.http.routers.whitelist-admin.entrypoints=websecure"
+      - "traefik.http.routers.whitelist-admin.tls=true"
+      - "traefik.http.routers.whitelist-admin.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.whitelist-admin.tls.domains[0].main=limpopo113.ru"
+      - "traefik.http.routers.whitelist-admin.tls.domains[0].sans=*.limpopo113.ru"
+      - "traefik.http.routers.whitelist-admin.service=whitelist-api"
+      - "traefik.http.routers.whitelist-admin.priority=200"
 
   frps:
     image: fatedier/frps:v0.61.1
@@ -38,15 +68,29 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=tunnel_net"
-      - "traefik.http.routers.frp.rule=HostRegexp(`[a-z0-9-]+\\.limpopo113\\.ru`)"
-      - "traefik.http.routers.frp.entrypoints=websecure"
-      - "traefik.http.routers.frp.tls=true"
-      - "traefik.http.routers.frp.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.frp.tls.domains[0].main=limpopo113.ru"
-      - "traefik.http.routers.frp.tls.domains[0].sans=*.limpopo113.ru"
       - "traefik.http.services.frp.loadbalancer.server.port=8080"
       - "traefik.http.services.frp.loadbalancer.server.scheme=http"
+      - 'traefik.http.routers.frp-n8n.rule=Host(`n8n-stage.limpopo113.ru`)'
+      - "traefik.http.routers.frp-n8n.entrypoints=websecure"
+      - "traefik.http.routers.frp-n8n.tls=true"
+      - "traefik.http.routers.frp-n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frp-n8n.tls.domains[0].main=limpopo113.ru"
+      - "traefik.http.routers.frp-n8n.tls.domains[0].sans=*.limpopo113.ru"
+      - "traefik.http.routers.frp-n8n.service=frp"
+      - "traefik.http.routers.frp-n8n.priority=100"
+      - 'traefik.http.routers.frp-locked.rule=HostRegexp(`[a-z0-9-]+\.limpopo113\.ru`) && !Host(`whitelist.limpopo113.ru`)'
+      - "traefik.http.routers.frp-locked.entrypoints=websecure"
+      - "traefik.http.routers.frp-locked.tls=true"
+      - "traefik.http.routers.frp-locked.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frp-locked.tls.domains[0].main=limpopo113.ru"
+      - "traefik.http.routers.frp-locked.tls.domains[0].sans=*.limpopo113.ru"
+      - "traefik.http.routers.frp-locked.service=frp"
+      - "traefik.http.routers.frp-locked.priority=10"
+      - "traefik.http.routers.frp-locked.middlewares=subdomains-ip-whitelist@file"
 
 networks:
   tunnel:
     name: tunnel_net
+
+volumes:
+  whitelist-data:
