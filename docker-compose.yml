@@ -86,6 +86,10 @@ services:
       - "traefik.http.routers.frp-n8n.tls.domains[0].sans=*.limpopo113.ru"
       - "traefik.http.routers.frp-n8n.service=frp"
       - "traefik.http.routers.frp-n8n.priority=100"
+      - 'traefik.http.routers.frp-n8n-web.rule=Host(`n8n-stage.limpopo113.ru`)'
+      - "traefik.http.routers.frp-n8n-web.entrypoints=web"
+      - "traefik.http.routers.frp-n8n-web.service=frp"
+      - "traefik.http.routers.frp-n8n-web.priority=100"
       - 'traefik.http.routers.frp-locked.rule=HostRegexp(`[a-z0-9-]+\.limpopo113\.ru`) && !Host(`whitelist.limpopo113.ru`)'
       - "traefik.http.routers.frp-locked.entrypoints=websecure"
       - "traefik.http.routers.frp-locked.tls=true"
@@ -95,6 +99,11 @@ services:
       - "traefik.http.routers.frp-locked.service=frp"
       - "traefik.http.routers.frp-locked.priority=10"
       - "traefik.http.routers.frp-locked.middlewares=subdomains-ip-whitelist@file"
+      - 'traefik.http.routers.frp-locked-web.rule=HostRegexp(`[a-z0-9-]+\.limpopo113\.ru`) && !Host(`whitelist.limpopo113.ru`)'
+      - "traefik.http.routers.frp-locked-web.entrypoints=web"
+      - "traefik.http.routers.frp-locked-web.service=frp"
+      - "traefik.http.routers.frp-locked-web.priority=10"
+      - "traefik.http.routers.frp-locked-web.middlewares=subdomains-ip-whitelist@file"
 
 networks:
   tunnel:
