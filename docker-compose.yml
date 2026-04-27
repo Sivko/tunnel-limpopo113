@@ -61,6 +61,13 @@ services:
       - "6002:6002/tcp"
       - "6003:6003/tcp"
       - "6004:6004/tcp"
+
+      - "6005:6005/tcp"
+      - "6006:6006/tcp"
+      - "6007:6007/tcp"
+      - "6008:6008/tcp"
+      - "6009:6009/tcp"
+      - "6010:6010/tcp"
     volumes:
       - ./frps.toml:/etc/frp/frps.toml:ro
     command: ["-c", "/etc/frp/frps.toml"]
